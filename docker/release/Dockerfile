@@ -1,5 +1,5 @@
 FROM himasou/todobackend-base:latest
-MAINTAINER Himasou Makwana <himasou@hotmail.com
+LABEL maintainer="himasou@hotmail.com"
 
 # Copy application artifacts
 COPY target /wheelhouse

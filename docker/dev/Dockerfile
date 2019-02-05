@@ -1,5 +1,5 @@
 FROM himasou/todobackend-base:latest
-MAINTAINER Himasou Makwana <himasou@hotmail.com>
+LABEL maintainer="himasou@hotmail.com"
 
 # Install dev/build dependencies
 RUN apt-get update && \

@@ -57,8 +57,6 @@ db:
 
 agent:
   image: jmenga/ansible
-  volumes:
-    - ../../ansible/probe.yml:/site.yml
   links:
     - db
   environment:

@@ -1,11 +1,11 @@
 # Project variables
 PROJECT_NAME ?= todobackend
-ORG_NAME ?= jmenga
+ORG_NAME ?= himasou
 REPO_NAME ?= todobackend
 
 # Filenames
-DEV_COMPOSE_FILE := docker/dev/docker-compose.yml
-REL_COMPOSE_FILE := docker/release/docker-compose.yml
+DEV_COMPOSE_FILE := docker/dev/docker-compose-v2.yml
+REL_COMPOSE_FILE := docker/release/docker-compose-v2.yml
 
 # Docker Compose Project Names
 REL_PROJECT := $(PROJECT_NAME)$(BUILD_ID)
@@ -40,19 +40,19 @@ DOCKER_REGISTRY_AUTH ?=
 .PHONY: test build release clean tag buildtag login logout publish
 
 test:
-	docker-compose -f docker/dev/docker-compose.yml build
-	# ${INFO} "Pulling latest images..."
-	# @ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) pull
-	# ${INFO} "Building images..."
-	# @ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build --pull test
-	# @ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build cache
-	# ${INFO} "Ensuring database is ready..."
-	# @ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) run --rm agent
-	# ${INFO} "Running tests..."
-	# @ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up test
-	# @ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q test):/reports/. reports
-	# ${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) test
-	# ${INFO} "Testing complete"
+	${INFO} "Creating cache volume..."
+	@ docker volume create --name cache
+	${INFO} "Pulling latest images..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) pull
+	${INFO} "Building images..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build --pull test
+	${INFO} "Ensuring database is ready..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) run --rm agent
+	${INFO} "Running tests..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up test
+	@ docker cp $$(docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) ps -q test):/reports/. reports
+	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) test
+	${INFO} "Testing complete"
 
 build:
 	${INFO} "Creating builder image..."
@@ -69,7 +69,6 @@ release:
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) pull test
 	${INFO} "Building images..."
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build app
-	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build webroot
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build --pull nginx
 	${INFO} "Ensuring database is ready..."
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm agent
@@ -85,11 +84,9 @@ release:
 
 clean:
 	${INFO} "Destroying development environment..."
-	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) kill
-	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) rm -f -v
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) down -v
 	${INFO} "Destroying release environment..."
-	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) kill
-	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) rm -f -v
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) down -v
 	${INFO} "Removing dangling images..."
 	@ docker images -q -f dangling=true -f label=application=$(REPO_NAME) | xargs -I ARGS docker rmi -f ARGS
 	${INFO} "Clean complete"
